@@ -92,4 +92,17 @@ DROP TABLE myorder;
 ```
 
 
+### 总结
+``` mysql
+-- 增加
+INSERT
+
+-- 删除
+DELETE
+
+-- 修改
+UPDATE
+
+-- 查询
+SELECT
 
