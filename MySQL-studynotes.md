@@ -14,7 +14,7 @@ show databases; (mysql里一定要打分号，区别python)
 CREATE DATABASE test;
 
 -- 切换
-ust test;
+use test;
 
 -- 显示数据库databases中所有的数据表tables
 show tables;
