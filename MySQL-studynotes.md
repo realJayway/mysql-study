@@ -6,7 +6,7 @@
 退出
 
 ## 基本语法
-'''
+```
 -- 显示所有数据库
 show databases; (mysql里一定要打分号，区别python)
 
