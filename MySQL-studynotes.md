@@ -110,8 +110,10 @@ SELECT
 
 
 ## mysql建表约束
-``` shell
+
+
 ### 主键约束
+``` shell
 能够唯一确定一张表中的一条记录，也就是通过给某个字段添加约束，就可以是的该字段不重复，且不为空。
 
 创建一个主键约束表
@@ -142,8 +144,9 @@ mysql> select * from user;
 insert into user value(NULL,'张三');
 mysql> insert into user value(NULL,'张三');
 ERROR 1048 (23000): Column 'id' cannot be null
-
+```
 ## 联合主键
+```shell
 -- 只要联合主键值加起来不重复就可以
 create table user2(
 id int,
@@ -180,9 +183,10 @@ insert into user2 values(NULL,'张三','123');
 
 mysql> insert into user2 values(NULL,'张三','123');
 ERROR 1048 (23000): Column 'id' cannot be null
-
+```
 
 ### 自增约束
+```shell
 create table user3(
 id int primary key auto_increment,
 name varchar(20)
@@ -244,12 +248,12 @@ mysql> desc user4;
 
 -- 使用modify修改字段，添加约束
 alter table user4 modify id int primary key;
-
+```
 
 
 
 ### 唯一约束
-
+```shell
 -- 约束修饰的字段的值不可以重复
 
 create table user5(
@@ -272,7 +276,7 @@ mysql> desc user5
 | name  | varchar(20) | YES  | UNI | NULL    |       |
 +-------+-------------+------+-----+---------+-------+
 2 rows in set (0.00 sec)
-
+```
 
  
 
@@ -285,6 +289,7 @@ mysql> desc user5
 ### 非空约束
 修饰的字段不能为空 NULL
 
+```shell
 create table user9(
 id int,
 name varchar(20) not null
@@ -311,10 +316,11 @@ insert into user9 (id) values (1);
 insert into user9 values(1,'Zhangsan');
 
 insert into user9 (name) values('Lisi');
-
+```
 
 
 ### 默认约束
+```shell
 插入字段值的时候，如果没有传值，就会使用默认值
 
 create table user10(
@@ -335,10 +341,11 @@ mysql> select * from user10;
 |    1 | Zhangsan |   20 |
 +------+----------+------+
 2 rows in set (0.00 sec)
-
+```
 
 ### 外键约束
 涉及到两个表：父表和子表（或主表和副表）
+```shell
 
 -- Classes
 create table classes(
