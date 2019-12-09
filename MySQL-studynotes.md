@@ -345,7 +345,7 @@ mysql> select * from user10;
 
 ### 外键约束
 涉及到两个表：父表和子表（或主表和副表）
-```shell
+```mysql
 
 -- Classes
 create table classes(
