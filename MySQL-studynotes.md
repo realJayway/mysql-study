@@ -545,13 +545,14 @@ CREATE TABLE customer (
 
 
 ## mysql查询练习
-
+```shell
 	学生表 Student
 	学号 
 	姓名
 	性别
 	出生年月日
 	所在班级
+        
 create table student(
 	sno varchar(20) primary key,
 	sname varchar(20) not Null,
@@ -581,4 +582,4 @@ create table student(
 	出生年月日
 	职称
 	所在部门
-
+```
