@@ -113,7 +113,7 @@ SELECT
 
 
 ### 主键约束
-``` shell
+``` mysql
 能够唯一确定一张表中的一条记录，也就是通过给某个字段添加约束，就可以是的该字段不重复，且不为空。
 
 创建一个主键约束表
@@ -146,7 +146,7 @@ mysql> insert into user value(NULL,'张三');
 ERROR 1048 (23000): Column 'id' cannot be null
 ```
 ## 联合主键
-```shell
+```mysql
 -- 只要联合主键值加起来不重复就可以
 create table user2(
 id int,
@@ -186,7 +186,7 @@ ERROR 1048 (23000): Column 'id' cannot be null
 ```
 
 ### 自增约束
-```shell
+```mysql
 create table user3(
 id int primary key auto_increment,
 name varchar(20)
@@ -253,7 +253,7 @@ alter table user4 modify id int primary key;
 
 
 ### 唯一约束
-```shell
+```mysql
 -- 约束修饰的字段的值不可以重复
 
 create table user5(
@@ -289,7 +289,7 @@ mysql> desc user5
 ### 非空约束
 修饰的字段不能为空 NULL
 
-```shell
+```mysql
 create table user9(
 id int,
 name varchar(20) not null
@@ -320,7 +320,7 @@ insert into user9 (name) values('Lisi');
 
 
 ### 默认约束
-```shell
+```mysql 
 插入字段值的时候，如果没有传值，就会使用默认值
 
 create table user10(
@@ -417,7 +417,7 @@ ERROR 1451 (23000): Cannot delete or update a parent row: a foreign key constrai
 ### 第一范式 1NF
 
 数据表中的所有字段都是不可分割的原子值
-```shell
+```mysql
 create table student2(
 id int primary key,
 name varchar(20),
@@ -473,7 +473,7 @@ mysql> select * from student3;
 必须满足第一范式的前提下，第二范式要求，除主键外的每一列都必须完全依赖于主键。
 如果要出现不完全依赖，只可能发生在联合主键的情况下。
 
-```shell
+```mysql
 -- 订单表
 
 create table myorder(
@@ -512,7 +512,7 @@ name varchar(20)
 
 必须先满足第二范式，除开主键列的其他列之间不能有传递依赖关系。
 
-```shell
+```mysql
 
 create table myorder(
 order_id int primary key,
@@ -545,7 +545,7 @@ CREATE TABLE customer (
 
 
 ## mysql查询练习
-```shell
+```mysql
 	学生表 Student
 	学号 
 	姓名
