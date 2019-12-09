@@ -541,3 +541,44 @@ CREATE TABLE customer (
 
 ```
 
+
+
+
+## mysql查询练习
+
+	学生表 Student
+	学号 
+	姓名
+	性别
+	出生年月日
+	所在班级
+create table student(
+	sno varchar(20) primary key,
+	sname varchar(20) not Null,
+	ssex varchar(10) not Null,
+	sbirthday datetime,
+	class varchar(20)
+);
+
+
+
+	课程表 Course
+	课程号
+	课程名称
+	教师编号
+
+
+	成绩表 Score
+	学号
+	课程号
+	成绩
+
+
+	教师表 Teacher
+	教师编号
+	教室名称
+	教师性别
+	出生年月日
+	职称
+	所在部门
+
