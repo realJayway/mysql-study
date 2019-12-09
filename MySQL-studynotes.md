@@ -412,3 +412,132 @@ ERROR 1451 (23000): Cannot delete or update a parent row: a foreign key constrai
 ```
 
 
+## 数据库的三大设计范式
+
+### 第一范式 1NF
+
+数据表中的所有字段都是不可分割的原子值
+```shell
+create table student2(
+id int primary key,
+name varchar(20),
+address varchar(20)
+);
+
+insert into student2 values(1,'Zhangsan','中国四川省成都市武侯区一环路南段24号');
+insert into student2 values(2,'Lisi','中国四川省成都市武侯区一环路南段24号');
+insert into student2 values(3,'Wangwu','中国四川省成都市高新区天府三街2号');
+
+mysql> select * from student2;
++----+----------+--------------------------------------+
+| id | name     | address                              |
++----+----------+--------------------------------------+
+|  1 | Zhangsan | 中国四川省成都市武侯区一环路南段24号 |
+|  2 | Lisi     | 中国四川省成都市武侯区一环路南段24号 |
+|  3 | Wangwu   | 中国四川省成都市高新区天府三街2号    |
++----+----------+--------------------------------------+
+3 rows in set (0.01 sec)
+
+-- 还可以继续拆分，则不满足第一范式。
+
+
+create table student3(
+id int primary key,
+name varchar(20),
+country varchar(10),
+province varchar(10),
+city varchar(10),
+details varchar(30)
+);
+
+insert into student3 values(1,'Zhangsan','中国','四川省','成都市','武侯区一环路南段24号');
+insert into student3 values(2,'Lisi','中国','四川省','成都市','武侯区一环路南段24号');
+insert into student3 values(3,'Wangwu','中国','四川省','成都市','高新区天府三街2号');
+
+mysql> select * from student3;
++----+----------+---------+----------+--------+----------------------+
+| id | name     | country | province | city   | details              |
++----+----------+---------+----------+--------+----------------------+
+|  1 | Zhangsan | 中国    | 四川省   | 成都市 | 武侯区一环路南段24号 |
+|  2 | Lisi     | 中国    | 四川省   | 成都市 | 武侯区一环路南段24号 |
+|  3 | Wangwu   | 中国    | 四川省   | 成都市 | 高新区天府三街2号    |
++----+----------+---------+----------+--------+----------------------+
+3 rows in set (0.00 sec)
+
+-- 范式，设计的越详细，对于某些实际操作可能更好，但不一定都是好处。
+```
+
+
+### 第二范式 2NF
+
+必须满足第一范式的前提下，第二范式要求，除主键外的每一列都必须完全依赖于主键。
+如果要出现不完全依赖，只可能发生在联合主键的情况下。
+
+```shell
+-- 订单表
+
+create table myorder(
+product_id int,
+customer_id int,
+product_name varchar(20),
+customer_name varchar(20),
+primary key(product_id, customer_id)
+);
+
+-- 问题？
+-- 除主键外的其他列，只依赖于主键的部分字段
+-- 拆表
+
+create table myorder(
+order_id int primary key,
+product_id int,
+customer_id int,
+);
+
+create table product(
+id int primary key,
+name varchar(20)
+);
+
+create table customer(
+id int primary key,
+name varchar(20)
+);
+
+-- 拆分成三个表则满足第二范式的设计！
+
+```
+
+### 第三范式 3NF
+
+必须先满足第二范式，除开主键列的其他列之间不能有传递依赖关系。
+
+```shell
+
+create table myorder(
+order_id int primary key,
+product_id int,
+customer_id int,
+customer_phone varchar(15)
+);
+
+-- 不满足第三范式
+-- 拆分
+
+CREATE TABLE myorder (
+    order_id INT PRIMARY KEY,
+    product_id INT,
+    customer_id INT
+);
+
+CREATE TABLE customer (
+    id INT PRIMARY KEY,
+    name VARCHAR(20),
+    phone VARCHAR(15)
+);
+
+
+-- 满足第三范式！
+
+```
+
