@@ -587,10 +587,11 @@ create table student(
 
 
 
-mysql查询练习
+## mysql查询练习
 
 ### 数据准备
 
+```mysql
 
 -- 学生表 Student
 -- 学号 
@@ -695,12 +696,13 @@ INSERT INTO score VALUES('109', '3-105', '76');
 INSERT INTO score VALUES('109', '3-245', '68');
 INSERT INTO score VALUES('109', '6-166', '81');
 
+```
 
 
-### 查询练习
+### 查询练习1-10
 
 
-
+```mysql
 -- 1. 查询 student 表的所有行
 SELECT * FROM student;
 
@@ -888,48 +890,7 @@ mysql> SELECT sno, cno, degree FROM score ORDER BY degree DESC LIMIT 0, 1;
 | 103 | 3-105 |     92 |
 +-----+-------+--------+
 1 row in set (0.00 sec)
+```
 
 
 
-
--- AVG: 平均值
-SELECT AVG(degree) FROM score WHERE c_no = '3-105';
-SELECT AVG(degree) FROM score WHERE c_no = '3-245';
-SELECT AVG(degree) FROM score WHERE c_no = '6-166';
-
--- GROUP BY: 分组查询
-SELECT c_no, AVG(degree) FROM score GROUP BY c_no;
-
-
-
-
-#### 11-20
-
--- 11.查询每门课的平均成绩
-select * from course;
-
--- avg()
-
-select avg(degree) from score where cno = '3-105';
-
-mysql> select avg(degree) from score where cno = '3-105';
-+-------------+
-| avg(degree) |
-+-------------+
-|     85.3333 |
-+-------------+
-1 row in set (0.00 sec)
-
--- 把所有平均值写在一个
--- group by 分组
-SELECT cno,avg(degree) FROM score GROUP BY cno;
-
-mysql> SELECT cno,avg(degree) FROM score GROUP BY cno;
-+-------+-------------+
-| cno   | avg(degree) |
-+-------+-------------+
-| 3-105 |     85.3333 |
-| 3-245 |     76.3333 |
-| 6-166 |     81.6667 |
-+-------+-------------+
-3 rows in set (0.00 sec)
