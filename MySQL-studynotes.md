@@ -2100,7 +2100,185 @@ and score.cno = course.cno;
 
 
 
+## SQL的四种连接查询
 
+
+### 内连接
+inner join 或者 join
+
+
+
+
+
+### 外连接
+1. 左连接 left join 或者 left outer join
+
+2. 右连接 right join 或者 right outer join
+
+3. 完全外连接 full join 或者 full outer join
+
+
+### 数据准备
+
+```mysql
+-- 创建新的库
+CREATE DATABASE testJoin;
+
+-- 创建两个表
+
+-- person表
+-- id,
+-- name,
+-- cardID
+
+CREATE TABLE person (
+    id INT,
+    name VARCHAR(20),
+    cardId INT
+);
+
+INSERT INTO person VALUES (1, '张三', 1), (2, '李四', 3), (3, '王五', 6);
+
+mysql> select * from person;
++------+------+--------+
+| id   | name | cardId |
++------+------+--------+
+|    1 | 张三 |      1 |
+|    2 | 李四 |      3 |
+|    3 | 王五 |      6 |
++------+------+--------+
+3 rows in set (0.00 sec)
+
+
+
+-- card表
+-- id,
+-- name
+
+CREATE TABLE card (
+    id INT,
+    name VARCHAR(20)
+);
+
+INSERT INTO card VALUES (1, '饭卡'), (2, '建行卡'), (3, '农行卡'), (4, '工商卡'), (5, '邮政卡');
+
+mysql> select * from card;
++------+--------+
+| id   | name   |
++------+--------+
+|    1 | 饭卡   |
+|    2 | 建行卡 |
+|    3 | 农行卡 |
+|    4 | 工商卡 |
+|    5 | 邮政卡 |
++------+--------+
+5 rows in set (0.00 sec)
+```
+并没有创建外键，如果创建了外键 `person`中`cardId`字段值为6的字段就插不进去。
+
+
+### 1. inner join （内联查询）
+
+```mysql
+SELECT * FROM person INNER JOIN card on person.cardId = card.id;
++------+------+--------+------+--------+
+| id   | name | cardId | id   | name   |
++------+------+--------+------+--------+
+|    1 | 张三 |      1 |    1 | 饭卡   |
+|    2 | 李四 |      3 |    3 | 农行卡 |
++------+------+--------+------+--------+
+2 rows in set (0.00 sec)
+
+-- 内联查询，其实就是两张表中的数据通过某个字段值相对，从而查询相关记录。
+
+SELECT * FROM person JOIN card on person.cardId = card.id;
+-- 不加inner也默认为内联查询
+```
+
+
+### 2. left join（左外连接）
+
+```mysql
+SELECT * FROM person left join card on person.cardId = card.id;
+
+mysql> SELECT * FROM person left join card on person.cardId = card.id;
++------+------+--------+------+--------+
+| id   | name | cardId | id   | name   |
++------+------+--------+------+--------+
+|    1 | 张三 |      1 |    1 | 饭卡   |
+|    2 | 李四 |      3 |    3 | 农行卡 |
+|    3 | 王五 |      6 | NULL | NULL   |
++------+------+--------+------+--------+
+3 rows in set (0.00 sec)
+
+-- 左外连接，会把左边表的所有数据显示出来，再匹配，若无匹配数据则由NULL代替。
+
+SELECT * FROM person left outer join card on person.cardId = card.id;
++------+------+--------+------+--------+
+| id   | name | cardId | id   | name   |
++------+------+--------+------+--------+
+|    1 | 张三 |      1 |    1 | 饭卡   |
+|    2 | 李四 |      3 |    3 | 农行卡 |
+|    3 | 王五 |      6 | NULL | NULL   |
++------+------+--------+------+--------+
+3 rows in set (0.00 sec)
+-- 改用left outer join 也有同样效果。
+
+```
+
+
+
+
+### 3.right join(右外连接)
+
+```mysql
+SELECT * FROM person right join card on person.cardId = card.id;
+
+mysql> SELECT * FROM person right join card on person.cardId = card.id;
++------+------+--------+------+--------+
+| id   | name | cardId | id   | name   |
++------+------+--------+------+--------+
+|    1 | 张三 |      1 |    1 | 饭卡   |
+|    2 | 李四 |      3 |    3 | 农行卡 |
+| NULL | NULL |   NULL |    2 | 建行卡 |
+| NULL | NULL |   NULL |    4 | 工商卡 |
+| NULL | NULL |   NULL |    5 | 邮政卡 |
++------+------+--------+------+--------+
+5 rows in set (0.00 sec)
+```
+
+右外连接与左外连接相反。
+
+
+### 4. full Join (全外连接)
+
+```mysql
+SELECT * FROM person full join card on person.cardId = card.id;
+-- mysql不支持这个语法，会报错
+mysql> SELECT * FROM person full join card on person.cardId = card.id;
+ERROR 1054 (42S22): Unknown column 'person.cardId' in 'on clause'
+
+-- 取交集则表示全外连接
+SELECT * FROM person LEFT JOIN card on person.cardId = card.id
+UNION
+SELECT * FROM person RIGHT JOIN card on person.cardId = card.id;
+
+mysql> SELECT * FROM person LEFT JOIN card on person.cardId = card.id
+    -> UNION
+    -> SELECT * FROM person RIGHT JOIN card on person.cardId = card.id;
++------+------+--------+------+--------+
+| id   | name | cardId | id   | name   |
++------+------+--------+------+--------+
+|    1 | 张三 |      1 |    1 | 饭卡   |
+|    2 | 李四 |      3 |    3 | 农行卡 |
+|    3 | 王五 |      6 | NULL | NULL   |
+| NULL | NULL |   NULL |    2 | 建行卡 |
+| NULL | NULL |   NULL |    4 | 工商卡 |
+| NULL | NULL |   NULL |    5 | 邮政卡 |
++------+------+--------+------+--------+
+6 rows in set (0.00 sec)
+
+```
 
 
 
