@@ -2290,6 +2290,11 @@ LEFT JOIN = $A\cup ( A \cap B) = A$
 RIGHT JOIN = $B \cup (A \cap B) = B$  
 FULL JOIN = $A \cup B$
 
+若令A为左表，B为右表。  
+$$INNER JOIN = A \cap B$$  
+$$LEFT JOIN = A\cup ( A \cap B) = A$$   
+$$RIGHT JOIN = B \cup (A \cap B) = B$$  
+$$FULL JOIN = A \cup B$$
 
 
 
