@@ -2280,9 +2280,12 @@ mysql> SELECT * FROM person LEFT JOIN card on person.cardId = card.id
 
 ```
 
+### 总结
 
 
 
+若令A为左表，B为右表。  
+INNER JOIN = A$intersection$B , LEFT JOIN = A$union$(A$intersection$B) = A , RIGHT JOIN = B$union$(A$intersection$B) = B , FULL JOIN = A$UNION$B
 
 
 
