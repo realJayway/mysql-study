@@ -2303,3 +2303,644 @@ FULL JOIN = $A \cup B$
 
 
 
+
+
+
+
+
+
+
+## mysql事务
+
+
+
+
+mysql 中，事务是最小的不可分割的工作单元，事务能够保证一个业务的完整性。
+
+比如在银行转账中：
+```mysql
+	a -> -100
+	update user set money = money - 100 where name = 'a';
+
+	b -> +100
+	update user set money = money + 100 where name = 'b';
+
+
+-- 实际程序中，如果只有一条执行成功而另一条不成功？
+-- 则出现了数据的前后不一致。
+
+	update user set money = money - 100 where name = 'a';
+
+	update user set money = money + 100 where name = 'b';
+
+-- 事务可以保证多条SQL语句，要么同时成功，要么同时失败。
+```
+
+
+
+
+
+###  commit&rollback
+
+1. mysql 默认是开启事务的（自动提交）。
+```mysql
+mysql> select @@autocommit;
++--------------+
+| @@autocommit |
++--------------+
+|            1 |
++--------------+
+1 row in set (0.01 sec)
+
+-- 默认事务开启的作用？
+-- 当我们执行一个sql语句时，立即生效且无法回滚。
+
+
+CREATE DATABASE bank;
+
+USE bank;
+
+CREATE TABLE user (
+    id INT PRIMARY KEY,
+    name VARCHAR(20),
+    money INT
+);
+
+INSERT INTO user VALUES (1, 'a', 1000);
+
+mysql> SELECT * FROM user;
++----+------+-------+
+| id | name | money |
++----+------+-------+
+|  1 | a    |  1000 |
++----+------+-------+
+1 row in set (0.00 sec)
+
+-- 在执行插入语句后数据立刻生效，原因是 MySQL 中的事务自动将它提交到了数据库中。那么所谓回滚的意思就是，撤销执行过的所有 SQL 语句，使其回滚到最后一次提交数据时的状态。
+
+-- 执行rollback回滚
+
+ROLLBACK;
+
+mysql> ROLLBACK;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> SELECT * FROM user;
++----+------+-------+
+| id | name | money |
++----+------+-------+
+|  1 | a    |  1000 |
++----+------+-------+
+1 row in set (0.00 sec)
+
+
+-- 设置 mysql 自动提交为 false
+
+mysql> SET AUTOCOMMIT = 0;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> select @@autocommit;
++--------------+
+| @@autocommit |
++--------------+
+|            0 |
++--------------+
+1 row in set (0.00 sec)
+
+-- 测试此时的回滚
+
+mysql> INSERT INTO user VALUES (2, 'b', 1000);
+Query OK, 1 row affected (0.01 sec)
+
+mysql> SELECT * FROM user;
++----+------+-------+
+| id | name | money |
++----+------+-------+
+|  1 | a    |  1000 |
+|  2 | b    |  1000 |
++----+------+-------+
+2 rows in set (0.00 sec)
+
+mysql> ROLLBACK;
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> SELECT * FROM user;
++----+------+-------+
+| id | name | money |
++----+------+-------+
+|  1 | a    |  1000 |
++----+------+-------+
+1 row in set (0.00 sec)
+```
+
+我们可以看到，在关闭了autocommit之后，就可以进行rollback。  
+其原理是先提交至一个虚拟的表中，再由手动commit。commit之前的过程都不会影响到真实的表。
+
+下面我们手动commit:
+```mysql
+mysql> INSERT INTO user VALUES (2, 'b', 1000);
+Query OK, 1 row affected (0.01 sec)
+
+mysql> COMMIT;
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> ROLLBACK;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> SELECT * FROM user;
++----+------+-------+
+| id | name | money |
++----+------+-------+
+|  1 | a    |  1000 |
+|  2 | b    |  1000 |
++----+------+-------+
+2 rows in set (0.00 sec)
+```
+可以看到此时就不能再rollback了。
+
+#### 总结
+
+1. 自动提交
+	* 查看自动提交状态：SELECT @@AUTOCOMMIT ；
+
+	* 设置自动提交状态：SET AUTOCOMMIT = 0 。
+
+2. 手动提交
+
+	@@AUTOCOMMIT = 0 时，使用 COMMIT 命令提交事务。
+
+3. 事务回滚
+
+	@@AUTOCOMMIT = 0 时，使用 ROLLBACK 命令回滚事务。
+
+
+#### 实际运用
+
+再返回到最开始的银行转账的实例中：
+```mysql
+-- 转账
+UPDATE user set money = money - 100 WHERE name = 'a';
+
+-- 到账
+UPDATE user set money = money + 100 WHERE name = 'b';
+
+SELECT * FROM user;
++----+------+-------+
+| id | name | money |
++----+------+-------+
+|  1 | a    |   900 |
+|  2 | b    |  1100 |
++----+------+-------+
+```
+这时我们运用rollback进行撤销：
+```mysql
+ROLLBACK;
+
+SELECT * FROM user;
++----+------+-------+
+| id | name | money |
++----+------+-------+
+|  1 | a    |  1000 |
+|  2 | b    |  1000 |
++----+------+-------+
+```
+即rollback进行了一次 ctrl + Z 的操作。
+
+
+
+### 手动开启事务	BEGIN/START TRANSACTION
+
+在 `@@AUTOCOMMIT = 1` 时，即使无法直接`callback`，我们也可以手动开启一个事务处理事件使其发生回滚。
+```mysql
+-- 重新设置AUTOCOMMIT = 1
+mysql> SET AUTOCOMMIT = 1;
+Query OK, 0 rows affected (0.00 sec)
+
+-- 使用 BEGIN 或者 START TRANSACTION 手动开启一个事务
+-- START TRANSACTION;
+BEGIN;
+UPDATE user set money = money - 100 WHERE name = 'a';
+UPDATE user set money = money + 100 WHERE name = 'b';
+
+mysql> BEGIN;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> UPDATE user set money = money - 100 WHERE name = 'a';
+Query OK, 1 row affected (0.00 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+mysql> UPDATE user set money = money + 100 WHERE name = 'b';
+Query OK, 1 row affected (0.01 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+
+-- 再次转账
+mysql> SELECT * FROM user;
++----+------+-------+
+| id | name | money |
++----+------+-------+
+|  1 | a    |   900 |
+|  2 | b    |  1100 |
++----+------+-------+
+2 rows in set (0.00 sec)
+
+mysql> rollback;
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> SELECT * FROM user;
++----+------+-------+
+| id | name | money |
++----+------+-------+
+|  1 | a    |  1000 |
+|  2 | b    |  1000 |
++----+------+-------+
+2 rows in set (0.00 sec)
+```
+
+此时又可以callback了，这就是事务的作用。  
+
+同样的，在BEGIN下，我们也需要手动commit。
+```mysql
+BEGIN;
+UPDATE user set money = money - 100 WHERE name = 'a';
+UPDATE user set money = money + 100 WHERE name = 'b';
+
+mysql> SELECT * FROM user;
++----+------+-------+
+| id | name | money |
++----+------+-------+
+|  1 | a    |   900 |
+|  2 | b    |  1100 |
++----+------+-------+
+2 rows in set (0.00 sec)
+
+mysql> commit;
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> rollback;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> SELECT * FROM user;
++----+------+-------+
+| id | name | money |
++----+------+-------+
+|  1 | a    |   900 |
+|  2 | b    |  1100 |
++----+------+-------+
+2 rows in set (0.00 sec)
+```
+
+
+### ACID特征与使用
+
+事务的四大特征：
+
+	* A 原子性：事务是最小的单位，不可以再分割；
+	* C 一致性：要求同一事务中的 SQL 语句，必须保证同时成功或者失败；
+	* I 隔离性：事务1 和 事务2 之间是具有隔离性的；
+	* D 持久性：事务一旦结束 ( COMMIT ) ，就不可以再返回了 ( ROLLBACK ) 。
+
+
+事务开启：
+	1. 修改默认提交 `set autocommit = 0`;
+	2. `begin`;
+	3. `start transaction`;
+事务手动提交：
+	`commit`;
+
+
+### 事务的隔离性
+
+事务的隔离性可分为四种 ( 性能从低到高 ) ：
+
+1. `READ UNCOMMITTED` ( 读取未提交 )
+如果有多个事务，那么任意事务都可以看见其他事务的未提交数据。
+
+2. `READ COMMITTED` ( 读取已提交 )
+只能读取到其他事务已经提交的数据。
+
+3. `REPEATABLE READ` ( 可被重复读 )
+如果有多个连接都开启了事务，那么事务之间不能共享数据记录，否则只能共享已提交的记录。
+
+4. `SERIALIZABLE` ( 串行化 )
+所有的事务都会按照固定顺序执行，执行完一个事务后再继续执行下一个事务的写入操作。
+
+
+准备一个`bank数据库 user表`:
+```mysql
+
+INSERT INTO user VALUES (3, '小明', 1000);
+INSERT INTO user VALUES (4, '淘宝店', 1000);
+
+mysql> select * from user;
++----+--------+-------+
+| id | name   | money |
++----+--------+-------+
+|  1 | a      |   900 |
+|  2 | b      |  1100 |
+|  3 | 小明   |  1000 |
+|  4 | 淘宝店 |  1000 |
++----+--------+-------+
+4 rows in set (0.05 sec)
+```
+
+#### 查看数据库的隔离级别
+
+```mysql
+mysql 8.0:
+-- 系统级别的
+select @@global.transaction_isolation;
+-- 会话级别的
+select @@transaction_isolation;
+
+
+mysql> select @@global.transaction_isolation;
++--------------------------------+
+| @@global.transaction_isolation |
++--------------------------------+
+| REPEATABLE-READ                |
++--------------------------------+
+1 row in set (0.00 sec)
+
+mysql> select @@transaction_isolation;
++-------------------------+
+| @@transaction_isolation |
++-------------------------+
+| REPEATABLE-READ         |
++-------------------------+
+1 row in set (0.00 sec)
+```
+
+#### 修改隔离级别
+
+```mysql
+set global transaction isolation level read uncommitted;
+
+mysql> select @@global.transaction_isolation;
++--------------------------------+
+| @@global.transaction_isolation |
++--------------------------------+
+| READ-UNCOMMITTED               |
++--------------------------------+
+1 row in set (0.00 sec)
+```
+#### 脏读(READ-UNCOMMITTED)
+
+
+脏读：一个事务读到了另一个事务还未提交的数据。
+
+```mysql
+-- 转账：小明在淘宝店买鞋子（800元）
+
+	小明 -> 成都
+	淘宝店 -> 广州
+
+
+-- 先修改隔离级别
+set global transaction isolation level read uncommitted;
+
+
+start transaction;
+update user set money = money - 800 WHERE name = '小明';
+update user set money = money + 800 WHERE name = '淘宝店';
+
+mysql> select * from user;
++----+--------+-------+
+| id | name   | money |
++----+--------+-------+
+|  1 | a      |   900 |
+|  2 | b      |  1100 |
+|  3 | 小明   |   200 |
+|  4 | 淘宝店 |  1800 |
++----+--------+-------+
+4 rows in set (0.00 sec)
+
+
+-- 此时小明让淘宝店去查是否到账了。
+mysql> use bank;
+Database changed
+mysql> select * from user;
++----+--------+-------+
+| id | name   | money |
++----+--------+-------+
+|  1 | a      |   900 |
+|  2 | b      |  1100 |
+|  3 | 小明   |   200 |
+|  4 | 淘宝店 |  1800 |
++----+--------+-------+
+4 rows in set (0.00 sec)
+
+-- 淘宝店在广州查询发现已经到账所以发货。
+-- 晚上吃饭花了1800，却发现钱不够。 为什么？
+
+-- 小明rollback了。
+mysql> rollback;
+Query OK, 0 rows affected (0.05 sec)
+
+mysql> select * from user;
++----+--------+-------+
+| id | name   | money |
++----+--------+-------+
+|  1 | a      |   900 |
+|  2 | b      |  1100 |
+|  3 | 小明   |  1000 |
+|  4 | 淘宝店 |  1000 |
++----+--------+-------+
+4 rows in set (0.00 sec)
+```
+则如果两个不同的地方都在进行操作，事务A开启之后，该数据可以被其他事务读取，即脏读。显然，实际操作时是不允许脏读的。
+
+
+#### 不可重复读(READ-COMMITTED)
+
+```mysql
+-- 修改隔离级别为 READ-COMMITTED
+set global transaction isolation level read committed;
+
+mysql> select @@global.transaction_isolation;
++--------------------------------+
+| @@global.transaction_isolation |
++--------------------------------+
+| READ-COMMITTED                 |
++--------------------------------+
+1 row in set (0.00 sec)
+```
+
+在 `bank数据库 user表`下：
+
+```mysql
+小张 - 银行会计
+start transaction;
+
+mysql> select * from user;
++----+--------+-------+
+| id | name   | money |
++----+--------+-------+
+|  1 | a      |   900 |
+|  2 | b      |  1100 |
+|  3 | 小明   |  1000 |
+|  4 | 淘宝店 |  1000 |
++----+--------+-------+
+
+-- 小王趁小张不在的时候：
+start transaction;
+insert into user values(5,'c',100);
+commit;
+
+mysql> select * from user;
++----+--------+-------+
+| id | name   | money |
++----+--------+-------+
+|  1 | a      |   900 |
+|  2 | b      |  1100 |
+|  3 | 小明   |  1000 |
+|  4 | 淘宝店 |  1000 |
+|  5 | c      |   100 |
++----+--------+-------+
+5 rows in set (0.00 sec)
+
+-- 小张回来后：
+
+select avg(money) from user;
+
+mysql> select avg(money) from user;
++------------+
+| avg(money) |
++------------+
+|   820.0000 |
++------------+
+1 row in set (0.00 sec)
+
+-- money 的平均值不是1000？
+```
+虽然 READ COMMITTED 让我们只能读取到其他事务已经提交的数据，但还是会出现问题，就是在读取同一个表的数据时，可能会发生前后不一致的情况。这被称为不可重复读现象 ( READ COMMITTED ) 。
+
+
+
+
+### 幻读(REPEATABLE READ)
+
+幻读，一个事务提交的数据，不能被其他事务读取到。
+
+我们看下列实例：
+
+```mysql
+-- 先修改隔离级别
+set global transaction isolation level REPEATABLE READ;
+
+select @@global.transaction_isolation;
+
+mysql> select @@global.transaction_isolation;
++--------------------------------+
+| @@global.transaction_isolation |
++--------------------------------+
+| REPEATABLE-READ                |
++--------------------------------+
+1 row in set (0.00 sec)
+
+在repeatable read 下会出现如下问题：
+
+-- 小张 - 成都
+start transaction;
+
+
+-- 小王 - 北京
+start transaction;
+
+-- 小张 - 成都
+insert into user values(6,'d',1000);	
+-- 小张查询
+SELECT * FROM user;
++----+-----------+-------+
+| id | name      | money |
++----+-----------+-------+
+|  1 | a         |   900 |
+|  2 | b         |  1100 |
+|  3 | 小明      |  1000 |
+|  4 | 淘宝店    |  1000 |
+|  5 | c         |   100 |
++----+-----------+-------+
+```
+但无论小张有没有在成都提交这个数据，小王始终都不能再他的终端的database中查到这一条数据，这是因为小王在此之前开启了一个新的事务 ( START TRANSACTION ) ，那么在他的这条新事务的线上，跟其他事务是没有联系的，也就是说，此时如果其他事务正在操作数据，它是不知道的。
+
+但当他想添加数据时
+```
+INSERT INTO user VALUES (6, 'd', 1000);
+-- ERROR 1062 (23000): Duplicate entry '6' for key 'PRIMARY'
+```
+这就是幻读。
+
+
+### 串行化(SERIALIZABLE)
+
+```MYSQL
+-- 先将隔离级别修改为SERIALIZABLE
+set global transaction isolation level SERIALIZABLE;
+
+select @@global.transaction_isolation;
+
+mysql> select @@global.transaction_isolation;
++--------------------------------+
+| @@global.transaction_isolation |
++--------------------------------+
+| SERIALIZABLE                   |
++--------------------------------+
+1 row in set (0.00 sec)
+
+再次看小张与小王的例子：
+
+-- 小张 - 成都
+start transaction;
+
+-- 小王 - 北京
+start transaction;
+
+-- 小张 - 成都
+insert into user values(7,'e',1000)
+mysql> select * from user;
++----+--------+-------+
+| id | name   | money |
++----+--------+-------+
+|  1 | a      |   900 |
+|  2 | b      |  1100 |
+|  3 | 小明   |  1000 |
+|  4 | 淘宝店 |  1000 |
+|  5 | c      |   100 |
+|  6 | d      |  1000 |
+|  7 | e      |  1000 |
++----+--------+-------+
+7 rows in set (0.00 sec)
+
+-- 小王 - 北京
+mysql> select * from user;
++----+--------+-------+
+| id | name   | money |
++----+--------+-------+
+|  1 | a      |   900 |
+|  2 | b      |  1100 |
+|  3 | 小明   |  1000 |
+|  4 | 淘宝店 |  1000 |
+|  5 | c      |   100 |
+|  6 | d      |  1000 |
+|  7 | e      |  1000 |
++----+--------+-------+
+7 rows in set (0.00 sec)
+
+insert into user values(8,'f',1000)
+```
+当user表被另外一个事务操作的时候，其他事务里的操作是不可以进行的。  
+即小王能够查到数据，但是不能插入，会进入排队状态(串行化)，必须等到小张写入确认之后才可以进行(未超时的前提下)。
+
+
+### 性能排序
+READ-UNCOMMITTED > READ-COMMITTED > REPEATABLE-READ > SERIALIZABLE, 即隔离级别越高，性能越差。  
+mysql默认级别为 REPEATABLE-READ
+
+
+
+
+
+
+
+
+
